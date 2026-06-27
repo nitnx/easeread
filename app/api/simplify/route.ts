@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
   // OpenAI-compatible provider (Qwen Cloud, DashScope, OpenRouter, etc.).
   const apiKey = process.env.LLM_API_KEY;
   const baseUrl = (process.env.LLM_BASE_URL ?? "").replace(/\/$/, "");
-  const model = process.env.LLM_MODEL ?? "qwen-plus";
+  const model = process.env.LLM_MODEL ?? "qwen3.6-flash";
 
   if (!apiKey || !baseUrl) {
     return NextResponse.json({ simplified: fallbackSimplify(text), fallback: true, reason: "missing_config" });
