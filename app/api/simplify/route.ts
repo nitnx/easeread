@@ -61,46 +61,59 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ simplified: fallbackSimplify(text), fallback: true, reason: "missing_key" });
   }
 
-  const model = process.env.GEMINI_MODEL ?? "gemini-2.0-flash";
+  const model = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: buildPrompt(text, level) }] }],
-          generationConfig: { temperature: 0.3 },
-        }),
+  const requestBody = JSON.stringify({
+    contents: [{ parts: [{ text: buildPrompt(text, level) }] }],
+    generationConfig: { temperature: 0.3 },
+  });
+
+  // Retry with exponential backoff to ride out free-tier per-minute (429) limits.
+  const maxAttempts = 3;
+  let lastStatus = 0;
+  let lastDetail = "";
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": apiKey,
+          },
+          body: requestBody,
+        }
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        const simplified: string =
+          data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("").trim() ?? "";
+        if (!simplified) {
+          return NextResponse.json({ simplified: fallbackSimplify(text), fallback: true, reason: "empty_response" });
+        }
+        return NextResponse.json({ simplified });
       }
-    );
 
-    if (!res.ok) {
-      const detail = await res.text();
-      console.error("Gemini error:", detail);
-      return NextResponse.json({
-        simplified: fallbackSimplify(text),
-        fallback: true,
-        reason: `api_${res.status}`,
-        detail: detail.slice(0, 300),
-      });
+      lastStatus = res.status;
+      lastDetail = (await res.text()).slice(0, 300);
+      console.error(`Gemini error (attempt ${attempt + 1}):`, res.status, lastDetail);
+
+      // Only 429 (rate limit) is worth retrying; other errors fail fast.
+      if (res.status !== 429 || attempt === maxAttempts - 1) break;
+      await new Promise((r) => setTimeout(r, 600 * Math.pow(2, attempt)));
+    } catch (err) {
+      console.error("Simplify request failed:", err);
+      return NextResponse.json({ simplified: fallbackSimplify(text), fallback: true, reason: "exception" });
     }
-
-    const data = await res.json();
-    const simplified: string =
-      data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("").trim() ?? "";
-
-    if (!simplified) {
-      return NextResponse.json({ simplified: fallbackSimplify(text), fallback: true, reason: "empty_response" });
-    }
-
-    return NextResponse.json({ simplified });
-  } catch (err) {
-    console.error("Simplify request failed:", err);
-    return NextResponse.json({ simplified: fallbackSimplify(text), fallback: true, reason: "exception" });
   }
+
+  return NextResponse.json({
+    simplified: fallbackSimplify(text),
+    fallback: true,
+    reason: `api_${lastStatus}`,
+    detail: lastDetail,
+  });
 }
