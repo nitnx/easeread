@@ -68,6 +68,8 @@ export async function POST(req: NextRequest) {
   const requestBody = JSON.stringify({
     model,
     temperature: 0.3,
+    // DashScope/Qwen: thinking models require this to be false in non-streaming mode.
+    enable_thinking: false,
     messages: [
       { role: "system", content: "You rewrite text to be easier to read. Output only the rewritten text." },
       { role: "user", content: buildPrompt(text, level) },
