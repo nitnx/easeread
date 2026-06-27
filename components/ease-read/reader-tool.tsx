@@ -29,6 +29,7 @@ export function ReaderTool() {
   const [isLoading, setIsLoading] = useState(false)
   const [usedFallback, setUsedFallback] = useState(false)
   const [fallbackReason, setFallbackReason] = useState("")
+  const [fallbackDetail, setFallbackDetail] = useState("")
   const [errorMsg, setErrorMsg] = useState("")
   const abortRef = useRef<AbortController | null>(null)
 
@@ -69,6 +70,7 @@ export function ReaderTool() {
       setOutput(data.simplified ?? "")
       setUsedFallback(Boolean(data.fallback))
       setFallbackReason(data.reason ?? "")
+      setFallbackDetail(data.detail ?? "")
     } catch (err) {
       if ((err as Error).name === "AbortError") return
       // Network failed — fall back to on-device simplification so the demo never breaks.
@@ -213,6 +215,7 @@ export function ReaderTool() {
                 <Info className="size-4 shrink-0" aria-hidden="true" />
                 Demo mode — add a GEMINI_API_KEY for full AI rewriting.
                 {fallbackReason ? ` [${fallbackReason}]` : ""}
+                {fallbackDetail ? ` — ${fallbackDetail}` : ""}
               </p>
             )}
             {errorMsg && (
