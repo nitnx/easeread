@@ -207,7 +207,7 @@ export function ReaderTool() {
             {usedFallback && (
               <p className="mt-3 flex items-center gap-2 rounded-lg border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm text-amber-800">
                 <Info className="size-4 shrink-0" aria-hidden="true" />
-                Demo mode — add an OpenAI API key for full AI rewriting.
+                Demo mode — add a GEMINI_API_KEY for full AI rewriting.
               </p>
             )}
             {errorMsg && (

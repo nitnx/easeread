@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ simplified: fallbackSimplify(text), fallback: true });
+    return NextResponse.json({ simplified: fallbackSimplify(text), fallback: true, reason: "missing_key" });
   }
 
   const model = process.env.GEMINI_MODEL ?? "gemini-2.0-flash";
@@ -82,7 +82,12 @@ export async function POST(req: NextRequest) {
     if (!res.ok) {
       const detail = await res.text();
       console.error("Gemini error:", detail);
-      return NextResponse.json({ simplified: fallbackSimplify(text), fallback: true });
+      return NextResponse.json({
+        simplified: fallbackSimplify(text),
+        fallback: true,
+        reason: `api_${res.status}`,
+        detail: detail.slice(0, 300),
+      });
     }
 
     const data = await res.json();
@@ -90,12 +95,12 @@ export async function POST(req: NextRequest) {
       data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("").trim() ?? "";
 
     if (!simplified) {
-      return NextResponse.json({ simplified: fallbackSimplify(text), fallback: true });
+      return NextResponse.json({ simplified: fallbackSimplify(text), fallback: true, reason: "empty_response" });
     }
 
     return NextResponse.json({ simplified });
   } catch (err) {
     console.error("Simplify request failed:", err);
-    return NextResponse.json({ simplified: fallbackSimplify(text), fallback: true });
+    return NextResponse.json({ simplified: fallbackSimplify(text), fallback: true, reason: "exception" });
   }
 }
