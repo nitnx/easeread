@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# EaseRead — Read anything, your way
 
-## Getting Started
+**Track 03 — AI That Actually Helps People** · Youth Code x AI
 
-First, run the development server:
+EaseRead is an AI reading assistant that rewrites any hard-to-read text into
+plain, clear language. It's built for people with **dyslexia, ADHD, and low
+literacy** — and for anyone who wants reading to feel less exhausting.
+
+Paste a paragraph, an email, a legal notice, or a textbook page. EaseRead
+rewrites it at the reading level you choose, then lets you tune how it looks and
+even read it aloud.
+
+## Why it matters
+
+Roughly 1 in 5 people has a language-based learning difference like dyslexia.
+Dense, jargon-heavy text shuts them out of information they have every right to
+understand — school assignments, government letters, health instructions.
+EaseRead removes that barrier in one click.
+
+## Features
+
+- **AI plain-language rewriting** at three reading levels (Kids / Easy / Standard)
+- **Side-by-side view** so you can trust nothing was lost
+- **Dyslexia-friendly font** (OpenDyslexic) toggle
+- **Adjustable text size and line spacing** for comfortable reading
+- **Read aloud** (text-to-speech) for multi-sensory support
+- **Graceful demo mode** so the app works even without an API key
+
+## Tech
+
+- Next.js (App Router) + TypeScript
+- Tailwind CSS v4 + shadcn/ui
+- Google Gemini API for rewriting (free tier)
+- Web Speech API for read-aloud
+
+## Run locally
 
 ```bash
+npm install
+cp .env.local.example .env.local   # add your GEMINI_API_KEY
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Without an API key the app still runs in demo mode (basic sentence splitting), so
+the UI and accessibility features are always demoable.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Accessibility notes
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+EaseRead is the product *and* an accessibility practice: keyboard-usable
+controls, high-contrast text, adjustable typography, and an audio reading option.
