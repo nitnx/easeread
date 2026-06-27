@@ -28,8 +28,6 @@ export function ReaderTool() {
   const [speaking, setSpeaking] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [usedFallback, setUsedFallback] = useState(false)
-  const [fallbackReason, setFallbackReason] = useState("")
-  const [fallbackDetail, setFallbackDetail] = useState("")
   const [errorMsg, setErrorMsg] = useState("")
   const abortRef = useRef<AbortController | null>(null)
 
@@ -49,7 +47,6 @@ export function ReaderTool() {
     setOutput("")
     setErrorMsg("")
     setUsedFallback(false)
-    setFallbackReason("")
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel()
       setSpeaking(false)
@@ -69,14 +66,11 @@ export function ReaderTool() {
       }
       setOutput(data.simplified ?? "")
       setUsedFallback(Boolean(data.fallback))
-      setFallbackReason(data.reason ?? "")
-      setFallbackDetail(data.detail ?? "")
     } catch (err) {
       if ((err as Error).name === "AbortError") return
       // Network failed — fall back to on-device simplification so the demo never breaks.
       setOutput(simplifyText(text, level))
       setUsedFallback(true)
-      setFallbackReason("network")
     } finally {
       setIsLoading(false)
     }
@@ -213,9 +207,7 @@ export function ReaderTool() {
             {usedFallback && (
               <p className="mt-3 flex items-center gap-2 rounded-lg border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm text-amber-800">
                 <Info className="size-4 shrink-0" aria-hidden="true" />
-                Demo mode — set LLM_API_KEY, LLM_BASE_URL and LLM_MODEL for full AI rewriting.
-                {fallbackReason ? ` [${fallbackReason}]` : ""}
-                {fallbackDetail ? ` — ${fallbackDetail}` : ""}
+                Showing a basic simplified version — live AI rewriting is briefly unavailable. Please try again in a moment.
               </p>
             )}
             {errorMsg && (
