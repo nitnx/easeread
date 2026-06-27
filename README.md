@@ -30,14 +30,14 @@ EaseRead removes that barrier in one click.
 
 - Next.js (App Router) + TypeScript
 - Tailwind CSS v4 + shadcn/ui
-- Google Gemini API for rewriting (free tier)
+- Any OpenAI-compatible LLM provider (Qwen Cloud, DashScope, OpenRouter, OpenAI)
 - Web Speech API for read-aloud
 
 ## Run locally
 
 ```bash
 npm install
-cp .env.local.example .env.local   # add your GEMINI_API_KEY
+cp .env.local.example .env.local   # set LLM_API_KEY, LLM_BASE_URL, LLM_MODEL
 npm run dev
 ```
 

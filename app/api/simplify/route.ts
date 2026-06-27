@@ -56,41 +56,43 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Text is too long. Please keep it under 8000 characters." }, { status: 400 });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ simplified: fallbackSimplify(text), fallback: true, reason: "missing_key" });
+  // OpenAI-compatible provider (Qwen Cloud, DashScope, OpenRouter, etc.).
+  const apiKey = process.env.LLM_API_KEY;
+  const baseUrl = (process.env.LLM_BASE_URL ?? "").replace(/\/$/, "");
+  const model = process.env.LLM_MODEL ?? "qwen-plus";
+
+  if (!apiKey || !baseUrl) {
+    return NextResponse.json({ simplified: fallbackSimplify(text), fallback: true, reason: "missing_config" });
   }
 
-  const model = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
-
   const requestBody = JSON.stringify({
-    contents: [{ parts: [{ text: buildPrompt(text, level) }] }],
-    generationConfig: { temperature: 0.3 },
+    model,
+    temperature: 0.3,
+    messages: [
+      { role: "system", content: "You rewrite text to be easier to read. Output only the rewritten text." },
+      { role: "user", content: buildPrompt(text, level) },
+    ],
   });
 
-  // Retry with exponential backoff to ride out free-tier per-minute (429) limits.
+  // Retry with exponential backoff to ride out transient rate limits (429).
   const maxAttempts = 3;
   let lastStatus = 0;
   let lastDetail = "";
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": apiKey,
-          },
-          body: requestBody,
-        }
-      );
+      const res = await fetch(`${baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: requestBody,
+      });
 
       if (res.ok) {
         const data = await res.json();
-        const simplified: string =
-          data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("").trim() ?? "";
+        const simplified: string = data.choices?.[0]?.message?.content?.trim() ?? "";
         if (!simplified) {
           return NextResponse.json({ simplified: fallbackSimplify(text), fallback: true, reason: "empty_response" });
         }
@@ -99,9 +101,9 @@ export async function POST(req: NextRequest) {
 
       lastStatus = res.status;
       lastDetail = (await res.text()).slice(0, 300);
-      console.error(`Gemini error (attempt ${attempt + 1}):`, res.status, lastDetail);
+      console.error(`LLM error (attempt ${attempt + 1}):`, res.status, lastDetail);
 
-      // Only 429 (rate limit) is worth retrying; other errors fail fast.
+      // Only rate-limit (429) is worth retrying; other errors fail fast.
       if (res.status !== 429 || attempt === maxAttempts - 1) break;
       await new Promise((r) => setTimeout(r, 600 * Math.pow(2, attempt)));
     } catch (err) {
